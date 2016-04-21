@@ -38,6 +38,15 @@ _⇒_ : ∀ {a b ℓ₁ ℓ₂} {A : Set a} {B : Set b} →
       REL A B ℓ₁ → REL A B ℓ₂ → Set _
 P ⇒ Q = ∀ {i j} → P i j → Q i j
 
+-- Containment is a pre-order.
+⇒-refl : ∀ {a b ℓ} {A : Set a} {B : Set b} {P : REL A B ℓ} → P ⇒ P
+⇒-refl = id
+
+⇒-trans : ∀ {a b ℓ₁ ℓ₂ ℓ₃} {A : Set a} {B : Set b} →
+          {R : REL A B ℓ₁} {S : REL A B ℓ₂} {T : REL A B ℓ₃} →
+          R ⇒ S → S ⇒ T → R ⇒ T
+⇒-trans p q x = q (p x)
+
 -- Generalised implication. If P ≡ Q it can be read as "f preserves
 -- P".
 
