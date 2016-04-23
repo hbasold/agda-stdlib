@@ -1,4 +1,4 @@
-{-# OPTIONS --copatterns --sized-types #-}
+{-# OPTIONS --sized-types #-}
 
 module Codata.Stream where
 
