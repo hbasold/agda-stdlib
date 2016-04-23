@@ -6,6 +6,10 @@ The library has been tested using Agda version TODO.
 
 Important changes since 0.12:
 
+* Added some basics for coinductive types in Codata
+* Added basics for relation transformers and implemented a generic
+  equivalence closure for relations.
+
 ------------------------------------------------------------------------
 -- Release notes for Agda standard library version 0.12
 ------------------------------------------------------------------------
