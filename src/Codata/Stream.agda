@@ -2,14 +2,14 @@
 
 module Codata.Stream where
 
-open import Level as Level using (zero)
+open import Level hiding (suc)
 open import Size
 open import Function
 open import Relation.Binary
 open import Relation.Binary.Transformer
 open import Relation.Binary.PropositionalEquality as P
 open ≡-Reasoning
-open import Codata.Bisimilarity
+open import Codata.Simulations
 open import Codata.UpTo
 
 open import Data.List using (List; module List; []; _∷_; _++_; length)
@@ -83,7 +83,8 @@ _↓_ : ∀ {a} {A : Set a} (s : Stream A) (n : ℕ) → List A
 s ↓ n = takeˢ n s
 
 -- Implementation of the standard stream bisimilarity.
-module Bisimilarity {a ℓ} (S : Setoid a ℓ) where
+module Bisimilarity {ℓ} (S : Setoid ℓ ℓ) where
+--module Bisimilarity {a ℓ} (S : Setoid ℓ ℓ) where
 
   infix 4 _~_
 
@@ -98,33 +99,48 @@ module Bisimilarity {a ℓ} (S : Setoid a ℓ) where
       tl~ : ∀ {j : Size< i} → _~_ {j} (tl s) (tl t)
   open _~_ public
 
-  _~[_]_ : Stream A → Size → Stream A → Set _
-  s ~[ i ] t = _~_ {i} s t
+  -- | Relation transformer that characterises bisimulations
+  Φ : Rt (Stream A) (Stream A) ℓ
+  Φ R s t = (hd s ≈ hd t) × R (tl s) (tl t)
 
-  s-bisim-refl : ∀ {i} {s : Stream A} → s ~[ i ] s
-  hd≈ s-bisim-refl               = SE.refl
-  tl~ (s-bisim-refl {_} {s}) {j} = s-bisim-refl {j} {tl s}
+  Φ-mono : Monotone Φ
+  Φ-mono R⇒S (h≈ , tR) = (h≈ , R⇒S tR)
 
-  s-bisim-sym : ∀ {i} {s t : Stream A} → s ~[ i ] t → t ~[ i ] s
-  hd≈ (s-bisim-sym             p)     = SE.sym (hd≈ p)
-  tl~ (s-bisim-sym {_} {s} {t} p) {j} =
-    s-bisim-sym {j} {tl s} {tl t} (tl~ p)
+  ~-isSim : IsSim Φ _~_
+  ~-isSim x~y = (hd≈ x~y , tl~ x~y)
 
-  s-bisim-trans : ∀ {i} {r s t : Stream A} →
-                  r ~[ i ] s → s ~[ i ] t → r ~[ i ] t
-  hd≈ (s-bisim-trans                 p q)     = SE.trans (hd≈ p) (hd≈ q)
-  tl~ (s-bisim-trans {_} {r} {s} {t} p q) {j} =
-    s-bisim-trans {j} {tl r} {tl s} {tl t} (tl~ p) (tl~ q)
+  -- | Bisimulation proof principle
+  ∃-bisim→~ : ∀ {R} → IsSim Φ R → {s t : Stream A} → R s t → s ~ t
+  hd≈ (∃-bisim→~ R-isBisim q) = proj₁ (R-isBisim q)
+  tl~ (∃-bisim→~ {R} R-isBisim q) =
+    ∃-bisim→~ {R} R-isBisim (proj₂ (R-isBisim q))
+
+  isSim : Sim _ _
+  isSim = record
+    { Carrier = Stream A
+    ; _≲_ = _~_
+    ; CharRt = Φ
+    ; isMono = Φ-mono
+    ; isSim = ~-isSim
+    ; final = ∃-bisim→~
+    }
+
+  isBisim : EquivSim _
+  isBisim = record
+    { sim = isSim
+    ; weak-refl-pres = λ p → (SE.refl , p)
+    ; weak-flip-pres = λ p → (SE.sym (proj₁ p) , proj₂ p)
+    ; weak-comp-pres = λ {
+      (_ , p , q) → (SE.trans (proj₁ p) (proj₁ q)
+                    , (_ , proj₂ p , proj₂ q))
+      }
+    }
 
   stream-setoid : Setoid _ _
   stream-setoid = record
     { Carrier = Stream A
     ; _≈_ = _~_
-    ; isEquivalence = record
-      { refl  = s-bisim-refl
-      ; sym   = s-bisim-sym
-      ; trans = s-bisim-trans
-      }
+    ; isEquivalence = bisim-is-equiv isBisim
     }
 
   import Relation.Binary.EqReasoning as EqR
@@ -138,29 +154,3 @@ module Bisimilarity {a ℓ} (S : Setoid a ℓ) where
   bisim→ext-≡ : ∀ {s t : Stream A} → s ~ t → ∀ {n} → s at n ≈ t at n
   bisim→ext-≡ p {zero}  = hd≈ p
   bisim→ext-≡ p {suc n} = bisim→ext-≡ (tl~ p) {n}
-
-  -- | Relation transformer that characterises bisimulations
-  Φ : Rt (Stream A) (Stream A) ℓ
-  Φ R s t = (hd s ≈ hd t) × R (tl s) (tl t)
-
-  Φ-mono : Monotone Φ
-  Φ-mono R⇒S (h≈ , tR) = (h≈ , R⇒S tR)
-
-  ~-isBisim : IsBisim Φ _~_
-  ~-isBisim x~y = (hd≈ x~y , tl~ x~y)
-
-  -- | Bisimulation proof principle
-  ∃-bisim→~ : ∀ {R} → IsBisim Φ R → {s t : Stream A} → R s t → s ~ t
-  hd≈ (∃-bisim→~ R-isBisim q) = proj₁ (R-isBisim q)
-  tl~ (∃-bisim→~ {R} R-isBisim q) =
-    ∃-bisim→~ {R} R-isBisim (proj₂ (R-isBisim q))
-
-  isBisim : Bisim _ _
-  isBisim = record
-              { Carrier = Stream A
-              ; _~_ = _~_
-              ; CharRt = Φ
-              ; isMono = Φ-mono
-              ; isBisim = ~-isBisim
-              ; final = ∃-bisim→~
-              }
