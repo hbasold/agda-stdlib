@@ -8,7 +8,7 @@
 
 module Relation.Binary.Transformer where
 
-open import Level hiding (_⊔_)
+open import Level
 open import Function
 open import Data.Product
 -- open import Relation.Nullary

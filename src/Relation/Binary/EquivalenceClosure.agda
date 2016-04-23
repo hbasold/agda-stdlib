@@ -10,7 +10,7 @@ module Relation.Binary.EquivalenceClosure where
 open import Level
 open import Relation.Binary
 open import Relation.Binary.Transformer
-
+open import Data.Product
 
 -- | Build equivalence closure
 data EquivCls {a ℓ} {A : Set a} (R : Rel A ℓ) : Rel A (a ⊔ ℓ) where
@@ -39,6 +39,10 @@ equivCls-idempotent cls-refl        = cls-refl
 equivCls-idempotent (cls-sym p)     = cls-sym (equivCls-idempotent p)
 equivCls-idempotent (cls-trans p q) =
   cls-trans (equivCls-idempotent p) (equivCls-idempotent q)
+
+equivCls-trans-comp : ∀{a ℓ} {A : Set a} {R : Rel A ℓ} →
+                      EquivCls R ⍮ EquivCls R ⇒ EquivCls R
+equivCls-trans-comp (_ , p , q) = cls-trans p q
 
 -- | Equivalence closure gives indeed equivalence relation
 equivCls-equiv : ∀{a ℓ} {A : Set a} (R : Rel A ℓ) → IsEquivalence (EquivCls R)
