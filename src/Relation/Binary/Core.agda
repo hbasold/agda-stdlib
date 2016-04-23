@@ -66,6 +66,16 @@ _Preserves₂_⟶_⟶_ :
 _+_ Preserves₂ P ⟶ Q ⟶ R =
   ∀ {x y u v} → P x y → Q u v → R (x + u) (y + v)
 
+-- Composition of relations
+_⍮_ : ∀ {a b c ℓ₁ ℓ₂} {A : Set a} {B : Set b} {C : Set c} →
+      REL A B ℓ₁ → REL B C ℓ₂ → REL A C (b ⊔ ℓ₁ ⊔ ℓ₂)
+(R ⍮ S) x y = ∃ λ z → R x z × S z y
+
+comp-mono : ∀ {a b c ℓ₁ ℓ₂} {A : Set a} {B : Set b} {C : Set c} →
+            {R R' : REL A B ℓ₁} {S S' : REL B C ℓ₂} →
+            R ⇒ R' → S ⇒ S' → R ⍮ S ⇒ R' ⍮ S'
+comp-mono p q (z , xRz , zSy) = (z , p xRz , q zSy)
+
 -- Reflexivity of _∼_ can be expressed as _≈_ ⇒ _∼_, for some
 -- underlying equality _≈_. However, the following variant is often
 -- easier to use.
